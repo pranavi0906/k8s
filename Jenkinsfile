@@ -20,7 +20,7 @@ pipeline {
             steps {
                 sh '''
                 docker build -t k8s:${BUILD_NUMBER} .
-                docker tag my-k8s-app:${BUILD_NUMBER} pranavi0906/k8s:${BUILD_NUMBER}
+                docker tag k8s:${BUILD_NUMBER} pranavi0906/k8s:${BUILD_NUMBER}
                 '''
             }
         }
