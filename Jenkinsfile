@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_HOST = "unix:///home/user/.docker/desktop/docker.sock"
+        IMAGE_NAME = "pranavi0906/pran"
     }
 
     stages {
@@ -24,27 +25,23 @@ pipeline {
             steps {
                 sh '''
                 docker build -t k8n:${BUILD_NUMBER} .
-                docker tag k8n:${BUILD_NUMBER} pranavi0906/pran:${BUILD_NUMBER}
+                docker tag k8n:${BUILD_NUMBER} $IMAGE_NAME:${BUILD_NUMBER}
                 '''
             }
         }
 
         stage('Docker Login & Push') {
             steps {
-                sh '''
-                export DOCKER_HOST=unix:///home/user/.docker/desktop/docker.sock
-                export DOCKER_CONFIG=/tmp/docker-config
-
-                rm -rf $DOCKER_CONFIG
-                mkdir -p $DOCKER_CONFIG
-                echo '{"auths":{}}' > $DOCKER_CONFIG/config.json
-
-                # 🔥 Updated here
-                echo "dckr_pat_Y6awuQ7qG-HTMEgH7YGJaGzh6_o" | docker login -u DOCKER_HUB_TOKEN --password-stdin
-
-                docker tag k8n:${BUILD_NUMBER} pranavi0906/pran:${BUILD_NUMBER}
-                docker push pranavi0906/pran:${BUILD_NUMBER}
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    docker push $IMAGE_NAME:${BUILD_NUMBER}
+                    '''
+                }
             }
         }
 
@@ -54,7 +51,7 @@ pipeline {
                 docker stop k8n-container || true
                 docker rm k8n-container || true
 
-                docker run -d -p 3000:8080 --name k8n-container pranavi0906/pran:${BUILD_NUMBER}
+                docker run -d -p 3000:8080 --name k8n-container $IMAGE_NAME:${BUILD_NUMBER}
                 '''
             }
         }
