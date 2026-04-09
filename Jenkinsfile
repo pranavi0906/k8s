@@ -38,7 +38,15 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh '''
+                    # ✅ FIX: avoid "pass not initialized" error
+                    export DOCKER_CONFIG=$WORKSPACE/.docker
+                    mkdir -p $DOCKER_CONFIG
+                    echo '{"auths":{}}' > $DOCKER_CONFIG/config.json
+
+                    # Login
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                    # Push image
                     docker push $IMAGE_NAME:${BUILD_NUMBER}
                     '''
                 }
